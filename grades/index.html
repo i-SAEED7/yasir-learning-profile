@@ -71,6 +71,113 @@
   .official-logo-side{padding-inline:12px}
 }
 
+
+/* تعديل نهائي: الترويسة الأفقية (شعار | فاصل | نص) على جميع الشاشات */
+.banner .official-head{
+  width:min(100%,1150px);
+  min-height:0;
+  margin:0 auto;
+  padding:18px 24px;
+  display:grid;
+  direction:rtl;
+  grid-template-columns:minmax(135px,29%) 3px minmax(0,1fr);
+  grid-template-rows:1fr;
+  gap:15px;
+  align-items:center;
+  justify-items:stretch;
+}
+.banner .official-logo-side{
+  grid-column:1;
+  grid-row:1;
+  height:auto;
+  padding:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-width:0;
+}
+.banner .official-logo-side .official-logo-image{
+  display:block;
+  width:min(100%,200px);
+  height:auto;
+  max-height:150px;
+  object-fit:contain;
+}
+.banner .official-divider{
+  grid-column:2;
+  grid-row:1;
+  width:3px;
+  height:125px;
+  display:block;
+  justify-self:center;
+  background:#fff;
+}
+.banner .official-lines{
+  grid-column:3;
+  grid-row:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:0;
+  padding:0 4px;
+  margin:0;
+  min-width:0;
+  white-space:normal;
+  font-size:clamp(18px,2.4vw,29px);
+  line-height:1.4;
+}
+.banner .official-lines span{
+  display:block;
+  overflow-wrap:normal;
+  max-width:100%;
+}
+.grid .item{
+  min-height:78px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+  text-align:center;
+}
+.grid .item strong{line-height:1.65}
+@media(max-width:700px){
+  .banner .official-head{
+    grid-template-columns:76px 2px minmax(0,1fr);
+    grid-template-rows:1fr;
+    gap:10px;
+    padding:15px 12px;
+    min-height:130px;
+  }
+  .banner .official-logo-side .official-logo-image{
+    width:76px;
+    max-height:98px;
+    height:auto;
+  }
+  .banner .official-divider{
+    grid-row:1;
+    grid-column:2;
+    width:2px;
+    height:112px;
+    margin:0;
+  }
+  .banner .official-lines{
+    grid-row:1;
+    grid-column:3;
+    padding:0;
+    font-size:clamp(12px,3.35vw,16px);
+    line-height:1.5;
+    text-align:center;
+  }
+  .grid .item{min-height:75px}
+}
+@media(max-width:355px){
+  .banner .official-head{grid-template-columns:64px 2px minmax(0,1fr);gap:8px;padding:12px 10px}
+  .banner .official-logo-side .official-logo-image{width:64px}
+  .banner .official-lines{font-size:11.7px;line-height:1.45}
+}
+
 </style></head><body>
 <div class="app">
 <header class="banner" role="banner">
@@ -108,7 +215,7 @@ const title=(heading,sub="")=>`<div class="bar"><div><span class="eyebrow">${saf
 const btn=(text,id,cls="")=>`<button class="btn ${cls}" id="${id}">${text}</button>`;
 function nav(){const n=$("nav");n.hidden=!role;if(!role)return;n.innerHTML=`<button id="home">⌂<br>الرئيسية</button><button id="out">↩<br>خروج</button>`; $("home").onclick=()=>{page=role==="admin"?"admin":"students";render()};$("out").onclick=()=>{role="";subject="";student=null;activeGroup=null;page="subjects";render()}}
 function render(){nav();const x=$("screen");
-if(page==="subjects"){x.innerHTML=title("اختر المادة الدراسية","نظام رصد الدرجات")+ `<div class="notice">نسخة العرض الحالية تجريبية ببيانات وهمية. لا تُدخل بيانات حقيقية حتى تفعيل قاعدة البيانات والتحقق الأمني.</div><div class="grid" style="margin-top:15px">`+SUBJECTS.map((s,i)=>`<button class="item" data-sub="${i}"><span class="glyph">◈</span><strong>${safe(s)}</strong></button>`).join("")+`</div><div style="margin-top:20px"><button class="btn outline full" id="adminEntry">دخول منسق الموقع</button></div>`;x.querySelectorAll("[data-sub]").forEach(el=>el.onclick=()=>{subject=SUBJECTS[Number(el.dataset.sub)];page="login";role="";render()});$("adminEntry").onclick=()=>{subject="";page="login";render()};return}
+if(page==="subjects"){x.innerHTML=title("اختر المادة الدراسية","نظام رصد الدرجات")+ `<div class="notice">نسخة العرض الحالية تجريبية ببيانات وهمية. لا تُدخل بيانات حقيقية حتى تفعيل قاعدة البيانات والتحقق الأمني.</div><div class="grid" style="margin-top:15px">`+SUBJECTS.map((s,i)=>`<button class="item" data-sub="${i}"><strong>${safe(s)}</strong></button>`).join("")+`</div><div style="margin-top:20px"><button class="btn outline full" id="adminEntry">دخول منسق الموقع</button></div>`;x.querySelectorAll("[data-sub]").forEach(el=>el.onclick=()=>{subject=SUBJECTS[Number(el.dataset.sub)];page="login";role="";render()});$("adminEntry").onclick=()=>{subject="";page="login";render()};return}
 if(page==="login"){x.innerHTML=`<section class="panel">${title(subject||"دخول منسق الموقع","رمز الدخول")}<p class="hint">رمز خاص بمجموعة الفصول المسندة داخل المادة. نسخة المعاينة لا تحقق أمان الدخول ولا تحفظ البيانات.</p><div class="field"><label for="pin">رمز الدخول</label><input id="pin" type="password" autocomplete="off" placeholder="رمز المجموعة"></div><div class="actions">${btn("دخول","loginBtn")}${btn("عودة","back","outline")}</div><p class="hint">للمعاينة: منسق الموقع <code>admin-demo</code> · الرياضيات المجموعة أ <code>demo1111</code> · المجموعة ب <code>demo2222</code>. لأي مادة أخرى ينشئ المنسق مجموعة تجريبية أولًا.</p></section>`;$("back").onclick=()=>{page="subjects";render()};$("loginBtn").onclick=()=>{const pin=$("pin").value.trim();if(!subject){if(pin!=="admin-demo")return flash("رمز المنسق التجريبي غير صحيح");role="admin";page="admin";render();return}const g=groups.find(g=>g.subject===subject&&g.pin===pin);if(!g)return flash("رمز المجموعة غير صحيح أو لم يُنشأ بعد");role="teacher";activeGroup=g;page="students";render()};return}
 if(page==="students"){const listStudents=subjectStudents();x.innerHTML=`<div class="subject-label"><span>المادة الدراسية</span><b>${safe(subject)}</b><small>${safe(activeGroup?.label||"")} · فصول ${safe(activeGroup?.classes.join("، ")||"")}</small></div><section class="panel"><div class="bar"><span class="pill">الأول الثانوي</span><span class="hint">${listStudents.length} طلاب ضمن صلاحية الرمز</span></div><div class="field"><label for="search">ابحث عن طالب</label><input id="search" placeholder="الاسم أو الفصل"></div><div id="studentList"></div></section>`;const list=()=>{let q=$("search").value.trim();$("studentList").innerHTML=listStudents.filter(s=>!s.archived&&(s.name+" "+s.class).includes(q)).map(s=>`<button class="student" data-id="${safe(s.id)}"><span class="avatar">${safe(s.name[0])}</span><span class="meta"><strong>${safe(s.name)}</strong><small>الفصل ${safe(s.class)}</small></span><span>‹</span></button>`).join("")||`<div class="empty">لا يوجد طلاب مطابقون ضمن الفصول المسموحة</div>`;$("studentList").querySelectorAll("[data-id]").forEach(el=>el.onclick=()=>{student=listStudents.find(s=>s.id===el.dataset.id);page="grades";render()})};$("search").oninput=list;list();return}
 if(page==="grades"){if(!student||!allowedStudent(student)){page="students";render();return}const id=student.id;const selected=test==="الكل"?TESTS:[test];x.innerHTML=`<section class="panel"><div class="bar"><div><span class="eyebrow">المادة: ${safe(subject)} · الفصل ${safe(student.class)}</span><h2 class="h">${safe(student.name)}</h2></div>${btn("الطلاب","backStudents","outline")}</div><div class="field"><label for="period">الفترة الدراسية</label><select id="period">${PERIODS.map(p=>`<option ${p===period?"selected":""}>${p}</option>`).join("")}</select></div><div class="field"><label for="test">الاختبار</label><select id="test">${[...TESTS,"الكل"].map(t=>`<option ${t===test?"selected":""}>${safe(t)}</option>`).join("")}</select></div><div id="inputs"></div><div class="notice">خيار «الكل» يعرض الدرجتين منفصلتين دون احتساب مجموع. يمكن التعديل ما دامت الفترة مفتوحة.</div></section>`;$("backStudents").onclick=()=>{page="students";render()};$("period").onchange=e=>{period=e.target.value;render()};$("test").onchange=e=>{test=e.target.value;render()};$("inputs").innerHTML=selected.map((t,i)=>{const r=recordKey(id,subject,period,t),closed=disabled(subject,period,t),v=records.get(r);return `<div class="score" aria-disabled="${closed}"><div class="bar"><strong>${safe(t)}</strong><span class="pill ${closed?"closed":""}">${closed?"مغلق":"مفتوح"}</span></div><label class="hint" for="score${i}">الدرجة</label><input type="number" min="0" step="any" id="score${i}" value="${v===undefined?"":safe(v)}" ${closed?"disabled":""} placeholder="لم تُرصد"><button class="btn full" data-save="${i}" ${closed?"disabled":""}>حفظ الدرجة</button></div>`}).join("");$("inputs").querySelectorAll("[data-save]").forEach(el=>el.onclick=()=>{const i=Number(el.dataset.save),t=selected[i],input=$("score"+i),v=input.value;if(v===""||!Number.isFinite(Number(v))||Number(v)<0)return flash("أدخل درجة رقمية غير سالبة");if(disabled(subject,period,t))return flash("هذا التقييم مغلق");records.set(recordKey(id,subject,period,t),Number(v));flash("حُفظت الدرجة داخل العرض التجريبي فقط")});return}
