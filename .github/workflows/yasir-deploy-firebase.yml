@@ -22,6 +22,14 @@ jobs:
         run: |
           test -n "$WIF_PROVIDER" || { echo "::error::Set repository variable FIREBASE_WIF_PROVIDER"; exit 1; }
           test -n "$DEPLOYER_SA" || { echo "::error::Set repository variable FIREBASE_DEPLOYER_SA"; exit 1; }
+      - name: Confirm database rules are safe to replace
+        env:
+          RULES_APPROVED: ${{ vars.YASIR_FIRESTORE_RULES_APPROVED }}
+        run: |
+          test "$RULES_APPROVED" = "yes" || {
+            echo "::error::Firestore rules apply to the project database. Confirm no other application depends on its existing rules, then set YASIR_FIRESTORE_RULES_APPROVED=yes.";
+            exit 1;
+          }
       - name: Authenticate Google Cloud without a static key
         uses: google-github-actions/auth@v3
         with:
