@@ -113,7 +113,6 @@ function render(){renderVersion++;nav();const x=$("screen");if(!x)return;
 }
 function renderSubjects(x){
  x.innerHTML=html("اختر المادة الدراسية","بوابة رصد الدرجات")+
- '<div class="notice">نظام مجاني يعتمد على Firebase Spark. الاستخدام ببيانات طلاب فعلية يتطلب اعتماد الجهة المختصة وحماية قاعدة البيانات.</div>'+
  '<div class="grid" style="margin-top:16px">'+SUBJECTS.map((s,i)=>'<button class="item" data-sub="'+i+'"><strong>'+safe(s)+'</strong></button>').join("")+'</div>'+
  '<div style="margin-top:18px">'+btn("دخول منسق الموقع","adminLogin","outline full")+'</div>';
  x.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>{subjectId=subId(Number(b.dataset.sub));page="login";render()});
@@ -323,6 +322,6 @@ async function start(){
   await setPersistence(regAuth,inMemoryPersistence);
   if(auth.currentUser){try{await load();page=role==="admin"?"admin":"students"}catch{await signOut(auth)}}
   render();
- }catch(e){console.error("Firebase initialization failed",e?.code||e);$("screen").innerHTML='<section class="panel">'+html("تعذر بدء الاتصال","Firebase Spark")+'<p class="hint">تأكد من تفعيل Firebase Authentication وCloud Firestore قبل الدخول.</p></section>'}
+ }catch(e){console.error("Firebase initialization failed",e?.code||e);$("screen").innerHTML='<section class="panel">'+html("تعذر بدء الاتصال","بوابة رصد الدرجات")+'<p class="hint">تأكد من تفعيل Firebase Authentication وCloud Firestore قبل الدخول.</p></section>'}
 }
 start();
