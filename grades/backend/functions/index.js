@@ -161,3 +161,9 @@ export const exportGrades=onCall(options,async req=>{
  if(snap.size>3000)error("تجاوز عدد السجلات حد التصدير؛ يلزم استخدام التصدير الدفعي","resource-exhausted");
  return snap.docs.map(d=>d.data());
 });
+
+export const logoutPortal=onCall(options,async req=>{
+ const u=await user(req);
+ await db.collection("sessions").doc(u.uid).update({revoked:true});
+ return {ok:true};
+});
