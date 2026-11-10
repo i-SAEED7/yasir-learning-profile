@@ -98,8 +98,9 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     match /ys_grades/{gradeId} {
-      allow get: if isAdmin() || (scope(resource.data.subjectId,resource.data.classId)
-        && exists(enrollmentPath(resource.data.subjectId,resource.data.classId,resource.data.studentId)));
+      allow get: if isAdmin() || (signed() && (resource == null ||
+        (scope(resource.data.subjectId,resource.data.classId)
+        && exists(enrollmentPath(resource.data.subjectId,resource.data.classId,resource.data.studentId)))));
       allow list: if isAdmin();
       allow create: if gradeFields(request.resource.data,gradeId)
         && (isAdmin() || scope(request.resource.data.subjectId,request.resource.data.classId))
