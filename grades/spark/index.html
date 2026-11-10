@@ -98,16 +98,18 @@
 }
 .banner .official-logo-side .official-logo-image{
   display:block;
-  width:min(100%,200px);
+  width:min(100%,280px);
   height:auto;
-  max-height:150px;
+  max-height:none;
   object-fit:contain;
 }
 .banner .official-divider{
   grid-column:2;
   grid-row:1;
   width:3px;
-  height:125px;
+  height:auto;
+  align-self:stretch;
+  margin-block:8px;
   display:block;
   justify-self:center;
   background:#fff;
@@ -144,23 +146,24 @@
 .grid .item strong{line-height:1.65}
 @media(max-width:700px){
   .banner .official-head{
-    grid-template-columns:76px 2px minmax(0,1fr);
+    grid-template-columns:minmax(108px,33%) 2px minmax(0,1fr);
     grid-template-rows:1fr;
     gap:10px;
     padding:15px 12px;
     min-height:130px;
   }
   .banner .official-logo-side .official-logo-image{
-    width:76px;
-    max-height:98px;
+    width:100%;
+    max-height:none;
     height:auto;
   }
   .banner .official-divider{
     grid-row:1;
     grid-column:2;
     width:2px;
-    height:112px;
-    margin:0;
+    height:auto;
+    align-self:stretch;
+    margin:6px 0;
   }
   .banner .official-lines{
     grid-row:1;
@@ -173,8 +176,8 @@
   .grid .item{min-height:75px}
 }
 @media(max-width:355px){
-  .banner .official-head{grid-template-columns:64px 2px minmax(0,1fr);gap:8px;padding:12px 10px}
-  .banner .official-logo-side .official-logo-image{width:64px}
+  .banner .official-head{grid-template-columns:minmax(90px,32%) 2px minmax(0,1fr);gap:8px;padding:12px 10px}
+  .banner .official-logo-side .official-logo-image{width:100%}
   .banner .official-lines{font-size:11.7px;line-height:1.45}
 }
 
