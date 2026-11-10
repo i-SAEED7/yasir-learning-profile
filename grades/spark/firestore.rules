@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() {
+      return request.auth != null;
+    }
+    function adminPath() {
+      return /databases/$(database)/documents/ys_admins/$(request.auth.uid);
+    }
+    function groupPath() {
+      return /databases/$(database)/documents/ys_groups/$(request.auth.uid);
+    }
+    function isAdmin() {
+      return signed() && exists(adminPath()) && get(adminPath()).data.active == true;
+    }
+    function isTeacher() {
+      return signed() && exists(groupPath()) && get(groupPath()).data.enabled == true;
+    }
+    function group() {
+      return get(groupPath()).data;
+    }
+    function scope(subjectId, classId) {
+      return isTeacher()
+        && group().subjectId == subjectId
+        && classId in group().classes;
+    }
+    function enrollmentPath(subjectId, classId, studentId) {
+      return /databases/$(database)/documents/ys_enrollments/$(subjectId)/classes/$(classId)/members/$(studentId);
+    }
+    function gradeKey(d) {
+      return d.subjectId + '_' + d.classId + '_' + d.studentId + '_' + d.periodId + '_' + d.testId;
+    }
+    function lockPath(d) {
+      return /databases/$(database)/documents/ys_locks/$(d.subjectId + '_' + d.periodId + '_' + d.testId);
+    }
+    function openGrade(d) {
+      return !exists(lockPath(d)) || get(lockPath(d)).data.closed != true;
+    }
+    function gradeFields(d, gradeId) {
+      return d.keys().hasOnly(['subjectId','classId','studentId','periodId','testId','value','updatedAt','updatedBy'])
+        && d.keys().hasAll(['subjectId','classId','studentId','periodId','testId','value','updatedAt','updatedBy'])
+        && d.subjectId is string
+        && d.classId is string
+        && d.studentId is string
+        && d.periodId in ['p0','p1','p2']
+        && d.testId in ['t0','t1']
+        && d.value is number
+        && d.value >= 0
+        && d.updatedBy == request.auth.uid
+        && d.updatedAt == request.time
+        && gradeId == gradeKey(d)
+        && exists(enrollmentPath(d.subjectId,d.classId,d.studentId));
+    }
+    match /ys_admins/{uid} {
+      // Manually create the FIRST admin account in Firebase Authentication,
+      // then create ys_admins/{authUid} with {active: true} in Firestore Console.
+      allow get: if signed() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+    match /ys_groups/{uid} {
+      allow get: if isAdmin() || (signed() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['subjectId','label','classes','enabled','updatedAt','createdAt'])
+        && request.resource.data.subjectId is string
+        && request.resource.data.subjectId.matches('^s([0-9]|1[0-4])$')
+        && request.resource.data.label is string
+        && request.resource.data.classes is list
+        && request.resource.data.classes.size() > 0
+        && request.resource.data.classes.size() <= 8
+        && request.resource.data.classes.hasOnly(['c1','c2','c3','c4','c5','c6','c7','c8'])
+        && request.resource.data.enabled is bool;
+      allow delete: if isAdmin();
+    }
+    match /ys_students/{studentId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /ys_enrollments/{subjectId}/classes/{classId}/members/{studentId} {
+      allow get, list: if isAdmin() || scope(subjectId,classId);
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['studentId','name','classId','subjectId'])
+        && request.resource.data.studentId == studentId
+        && request.resource.data.classId == classId
+        && request.resource.data.subjectId == subjectId
+        && request.resource.data.name is string;
+      allow delete: if isAdmin();
+    }
+    match /ys_locks/{lockId} {
+      // Status-only documents, no student information.
+      allow get, list: if signed();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['subjectId','periodId','testId','closed','updatedAt'])
+        && request.resource.data.subjectId is string
+        && request.resource.data.periodId in ['p0','p1','p2']
+        && request.resource.data.testId in ['t0','t1']
+        && request.resource.data.closed is bool
+        && lockId == request.resource.data.subjectId + '_' + request.resource.data.periodId + '_' + request.resource.data.testId;
+      allow delete: if isAdmin();
+    }
+    match /ys_grades/{gradeId} {
+      allow get: if isAdmin() || (scope(resource.data.subjectId,resource.data.classId)
+        && exists(enrollmentPath(resource.data.subjectId,resource.data.classId,resource.data.studentId)));
+      allow list: if isAdmin();
+      allow create: if gradeFields(request.resource.data,gradeId)
+        && (isAdmin() || scope(request.resource.data.subjectId,request.resource.data.classId))
+        && (isAdmin() || openGrade(request.resource.data));
+      allow update: if gradeFields(request.resource.data,gradeId)
+        && request.resource.data.subjectId == resource.data.subjectId
+        && request.resource.data.classId == resource.data.classId
+        && request.resource.data.studentId == resource.data.studentId
+        && request.resource.data.periodId == resource.data.periodId
+        && request.resource.data.testId == resource.data.testId
+        && (isAdmin() || scope(request.resource.data.subjectId,request.resource.data.classId))
+        && (isAdmin() || openGrade(request.resource.data));
+      allow delete: if false;
+    }
+    match /ys_audit/{id} {
+      allow get, list: if isAdmin();
+      allow create: if (isAdmin() || isTeacher())
+        && request.resource.data.keys().hasOnly(['action','actorUid','details','createdAt'])
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.action is string;
+      allow update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
