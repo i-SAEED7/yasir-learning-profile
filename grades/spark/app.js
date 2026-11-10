@@ -309,7 +309,7 @@ function renderExport(){
   for(const r of all){const s=st.get(r.studentId);cells.push([s?.name||"مؤرشف",className(r.classId),subjectName(r.subjectId),PERIODS[Number(r.periodId.slice(1))],TESTS[Number(r.testId.slice(1))],r.value])}
   const csv="\ufeff"+cells.map(row=>row.map(safeCsv).join(",")).join("\r\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-  const link=document.createElement("a");link.href=url;link.download="درجات_يسير_"+new Date().toISOString().slice(0,10)+".csv";link.click();URL.revokeObjectURL(url);
+  const link=document.createElement("a");link.href=url;link.download="درجات_يسير_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   flash("تم إنشاء ملف Excel متوافق بصيغة CSV");
  });
 }
@@ -318,6 +318,7 @@ async function start(){
   const app=initializeApp(firebaseConfig);
   auth=getAuth(app);db=getFirestore(app);
   await setPersistence(auth,browserSessionPersistence);
+  await auth.authStateReady();
   const reg=initializeApp(firebaseConfig,"ys-group-registrar");regAuth=getAuth(reg);
   await setPersistence(regAuth,inMemoryPersistence);
   if(auth.currentUser){try{await load();page=role==="admin"?"admin":"students"}catch{await signOut(auth)}}
