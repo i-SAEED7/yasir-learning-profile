@@ -27,3 +27,18 @@ jobs:
         run: node --check grades/secure/app.js
       - name: Check production safety boundaries
         run: node --test grades/secure/preflight.test.mjs
+      - name: Check Spark client syntax
+        run: node --check grades/spark/app.js
+      - name: Check free-plan safety boundaries
+        run: node --test grades/spark/preflight.test.mjs
+      - name: Set up Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install isolated Firestore test dependencies
+        working-directory: grades/spark
+        run: npm install --no-audit --no-fund --no-save firebase@13.2.0 @firebase/rules-unit-testing@6.0.0
+      - name: Test Firestore security rules in emulator
+        working-directory: grades/spark
+        run: npx --yes firebase-tools@15.35.0 emulators:exec --only firestore --project demo-yasir-rules-tests --config firebase.json "node --test rules.test.mjs"
