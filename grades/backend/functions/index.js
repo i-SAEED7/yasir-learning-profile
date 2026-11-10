@@ -30,6 +30,7 @@ async function user(req,adminOnly=false){
  if(s.role==="teacher"){
   const g=await db.collection("groups").doc(s.groupId).get();
   if(!g.exists||!g.data().enabled)error("رمز المجموعة غير فعال","permission-denied");
+  if((s.groupVersion??1)!==(g.data().version??1))error("تغيرت صلاحيات المجموعة، الرجاء تسجيل الدخول مجددًا","unauthenticated");
   return {role:"teacher",uid:req.auth.uid,groupId:s.groupId,...{subject:g.data().subject,classes:g.data().classes}};
  }
  return {role:"admin",uid:req.auth.uid};
@@ -48,7 +49,7 @@ export const loginWithPin=onCall({...options,secrets:[PEPPER,ADMIN_PIN]},async r
  const {subject,pin,admin=false}=req.data||{};
  if(typeof pin!=="string"||pin.length<8||pin.length>128)error("الرمز غير صحيح","unauthenticated");
  await rateLimit(req);
- let role,groupId=null;
+ let role,groupId=null,groupVersion=null;
  if(admin){
    const a=Buffer.from(createHash("sha256").update(pin).digest("hex"),"hex");
    const b=Buffer.from(createHash("sha256").update(ADMIN_PIN.value()).digest("hex"),"hex");
@@ -59,10 +60,10 @@ export const loginWithPin=onCall({...options,secrets:[PEPPER,ADMIN_PIN]},async r
    const snap=await db.collection("groups").where("subject","==",subject).where("enabled","==",true).get();
    const found=snap.docs.find(d=>matches(pin,d.data().pinHash));
    if(!found)error("رمز غير صحيح","unauthenticated");
-   role="teacher";groupId=found.id;
+   role="teacher";groupId=found.id;groupVersion=found.data().version??1;
  }
  const uid="ys-"+randomUUID(),expiresAt=new Date(Date.now()+2*60*60*1000);
- await db.collection("sessions").doc(uid).set({role,groupId,revoked:false,expiresAt});
+ await db.collection("sessions").doc(uid).set({role,groupId,groupVersion,revoked:false,expiresAt});
  const token=await getAuth().createCustomToken(uid,{ysRole:role});
  return {token,role,expiresAt:expiresAt.toISOString()};
 });
@@ -71,11 +72,11 @@ export const loadPortal=onCall(options,async req=>{
  if(u.role==="admin"){
   for(const name of ["students","groups","locks","grades"]){
    const docs=await db.collection(name).limit(2000).get();
-   out[name==="grades"?"records":name]=docs.docs.map(d=>({id:d.id,...d.data(),pinHash:undefined}));
+   out[name==="grades"?"records":name]=docs.docs.filter(d=>name!=="students"||!d.data().archived).map(d=>{const {pinHash,...data}=d.data();return {id:d.id,...data};});
   }
  }else{
   const docs=await db.collection("students").where("class","in",u.classes).get();
-  out.students=docs.docs.map(d=>({id:d.id,...d.data()})).filter(s=>s.subjects.includes(u.subject));
+  out.students=docs.docs.map(d=>({id:d.id,...d.data()})).filter(s=>!s.archived&&Array.isArray(s.subjects)&&s.subjects.includes(u.subject));
   const records=await db.collection("grades").where("subject","==",u.subject).get();
   const ids=new Set(out.students.map(s=>s.id));
   out.records=records.docs.map(d=>({id:d.id,...d.data()})).filter(r=>ids.has(r.studentId));
@@ -93,7 +94,7 @@ export const saveGrade=onCall(options,async req=>{
  const studentRef=db.collection("students").doc(studentId),lockRef=db.collection("locks").doc(docKey([subject,period,test])),gradeRef=db.collection("grades").doc(docKey([studentId,subject,period,test]));
  await db.runTransaction(async tx=>{
   const [student,lock,old]=await Promise.all([tx.get(studentRef),tx.get(lockRef),tx.get(gradeRef)]);
-  if(!student.exists||!student.data().subjects.includes(subject))error("الطالب غير مسند للمادة","permission-denied");
+  if(!student.exists||student.data().archived||!Array.isArray(student.data().subjects)||!student.data().subjects.includes(subject))error("الطالب غير مسند للمادة أو مؤرشف","permission-denied");
   if(u.role!=="admin"&&!u.classes.includes(student.data().class))error("الفصل غير مصرح به","permission-denied");
   if(u.role!=="admin"&&lock.data()?.closed)error("التقييم مغلق","permission-denied");
   tx.set(gradeRef,{studentId,subject,period,test,value,updatedAt:FieldValue.serverTimestamp()});
@@ -104,8 +105,9 @@ export const saveGrade=onCall(options,async req=>{
 export const upsertStudent=onCall(options,async req=>{
  const u=await user(req,true),{id,name,class:cls,subjects:assigned}=req.data||{};
  if(typeof name!=="string"||name.trim().length<3||name.length>90||!validClass(cls)||!Array.isArray(assigned)||!assigned.length||assigned.some(s=>!subjects.has(s)))error("بيانات الطالب غير صحيحة");
+ if(id!==undefined&&(typeof id!=="string"||id.length>128))error("معرف الطالب غير صالح");
  const studentId=id||randomUUID();
- await db.collection("students").doc(studentId).set({name:name.trim(),class:cls,subjects:[...new Set(assigned)],updatedAt:FieldValue.serverTimestamp()});
+ await db.collection("students").doc(studentId).set({name:name.trim(),class:cls,subjects:[...new Set(assigned)],archived:false,updatedAt:FieldValue.serverTimestamp()});
  await db.collection("audit").add(audit("upsertStudent",u.uid,{studentId}));return {id:studentId};
 });
 export const removeStudent=onCall(options,async req=>{
@@ -117,13 +119,25 @@ export const removeStudent=onCall(options,async req=>{
 });
 export const upsertGroup=onCall({...options,secrets:[PEPPER]},async req=>{
  const u=await user(req,true),{id,subject,label,classes,pin}=req.data||{};
- if(!subjects.has(subject)||typeof label!=="string"||!label.trim()||!Array.isArray(classes)||!classes.length||classes.some(c=>!validClass(c)))error("بيانات المجموعة غير صحيحة");
- if(typeof pin!=="string"||pin.length<12||pin.length>128)error("رمز المجموعة يجب أن يتكون من 12 حرفًا على الأقل");
+ if(!subjects.has(subject)||typeof label!=="string"||!label.trim()||label.length>80||
+    !Array.isArray(classes)||!classes.length||classes.length>8||classes.some(c=>!validClass(c)))error("بيانات المجموعة غير صحيحة");
+ if(id!==undefined&&(typeof id!=="string"||id.length>128))error("معرف المجموعة غير صالح");
+ const old=id?await db.collection("groups").doc(id).get():null;
+ if(id&&!old?.exists)error("المجموعة غير موجودة","not-found");
+ if(!id&&(typeof pin!=="string"||pin.length<12||pin.length>128))error("رمز المجموعة الجديد يجب أن يتكون من 12 حرفًا على الأقل");
+ if(id&&pin!==undefined&&(typeof pin!=="string"||pin.length<12||pin.length>128))error("رمز المجموعة يجب أن يتكون من 12 حرفًا على الأقل");
  const others=await db.collection("groups").where("subject","==",subject).where("enabled","==",true).get();
  if(others.docs.some(d=>d.id!==id&&d.data().classes.some(c=>classes.includes(c))))error("يوجد فصل مسند لمجموعة أخرى في المادة");
- const groupId=id||randomUUID();
- await db.collection("groups").doc(groupId).set({subject,label:label.trim(),classes:[...new Set(classes)],pinHash:makeHash(pin),enabled:true,updatedAt:FieldValue.serverTimestamp()});
- await db.collection("audit").add(audit("upsertGroup",u.uid,{groupId,subject,classes}));return {id:groupId};
+ const groupId=id||randomUUID(),data={
+   subject,label:label.trim(),classes:[...new Set(classes)],enabled:true,
+   version:(old?.data()?.version??0)+1,updatedAt:FieldValue.serverTimestamp()
+ };
+ if(pin!==undefined)data.pinHash=makeHash(pin);
+ else if(old?.exists)data.pinHash=old.data().pinHash;
+ else error("رمز المجموعة مطلوب");
+ await db.collection("groups").doc(groupId).set(data);
+ await db.collection("audit").add(audit("upsertGroup",u.uid,{groupId,subject,classes,revokedPreviousSessions:!!id}));
+ return {id:groupId};
 });
 export const disableGroup=onCall(options,async req=>{
  const u=await user(req,true),id=req.data?.id;
@@ -142,6 +156,7 @@ export const setLocks=onCall(options,async req=>{
 });
 export const exportGrades=onCall(options,async req=>{
  await user(req,true);
- const snap=await db.collection("grades").limit(3000).get();
+ const snap=await db.collection("grades").limit(3001).get();
+ if(snap.size>3000)error("تجاوز عدد السجلات حد التصدير؛ يلزم استخدام التصدير الدفعي","resource-exhausted");
  return snap.docs.map(d=>d.data());
 });
