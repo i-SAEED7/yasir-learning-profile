@@ -17,6 +17,7 @@
 5. أضف في GitHub Repository → Settings → Secrets and variables → Actions → Variables:
    - `FIREBASE_WIF_PROVIDER`: مسار موفر Workload Identity الكامل `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL/providers/PROVIDER`
    - `FIREBASE_DEPLOYER_SA`: البريد الخاص بحساب خدمة النشر فقط.
+   - `YASIR_FIRESTORE_RULES_APPROVED`: اضبطها على `yes` **فقط بعد** التأكد أن نشر قواعد المنع الافتراضي لن يعطل تطبيقًا آخر يستخدم قاعدة Firestore نفسها. الأفضل استخدام مشروع Firebase مستقل للدرجات عند وجود استخدامات أخرى.
    هذه مُعرّفات عامة وليست أسرارًا.
 6. في GitHub Actions افتح `Yasir Grades - Deploy Firebase Backend` ثم اختر **Run workflow** من فرع `main`؛ النشر **يدوي** ولا يعمل تلقائيًا.
 7. افحص نتائج النشر: Cloud Functions يجب أن تتضمن `loginWithPin`, `loadPortal`, `saveGrade`, `upsertStudent`, `removeStudent`, `upsertGroup`, `disableGroup`, `setLocks`, `exportGrades`, `logoutPortal`. تأكد من أن قواعد `firestore.rules` منشورة وتمنع الوصول المباشر.
