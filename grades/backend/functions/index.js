@@ -69,7 +69,7 @@ export const loginWithPin=onCall({...options,secrets:[PEPPER,ADMIN_PIN]},async r
  return {token,role,expiresAt:expiresAt.toISOString()};
 });
 export const loadPortal=onCall(options,async req=>{
- const u=await user(req),out={role:u.role,students:[],groups:[],locks:[],records:[]};
+ const u=await user(req),out={role:u.role,students:[],groups:[],locks:[],records:[],groupInfo:u.role==="teacher"?{subject:u.subject,classes:u.classes}:null};
  if(u.role==="admin"){
   for(const name of ["students","groups","locks","grades"]){
    const docs=await db.collection(name).limit(2000).get();
