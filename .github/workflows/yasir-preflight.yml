@@ -1,0 +1,25 @@
+name: Yasir Grade Portal - Security Preflight
+on:
+  push:
+    paths:
+      - "grades/**"
+      - ".github/workflows/yasir-preflight.yml"
+  pull_request:
+    paths:
+      - "grades/**"
+      - ".github/workflows/yasir-preflight.yml"
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check backend syntax
+        run: node --check grades/backend/functions/index.js
+      - name: Test authorization policies
+        run: node --test grades/backend/functions/policy.test.mjs
