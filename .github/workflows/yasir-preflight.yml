@@ -23,3 +23,7 @@ jobs:
         run: node --check grades/backend/functions/index.js
       - name: Test authorization policies
         run: node --test grades/backend/functions/policy.test.mjs
+      - name: Check secure client syntax
+        run: node --check grades/secure/app.js
+      - name: Check production safety boundaries
+        run: node --test grades/secure/preflight.test.mjs
