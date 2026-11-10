@@ -4,6 +4,7 @@ import {initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getFirestore,FieldValue} from "firebase-admin/firestore";
 import {randomBytes,scryptSync,timingSafeEqual,randomUUID,createHash} from "node:crypto";
+import {validScore,canAccessStudent,overlappingClasses} from "./policy.mjs";
 
 initializeApp();
 const db=getFirestore();
@@ -88,14 +89,13 @@ export const loadPortal=onCall(options,async req=>{
 export const saveGrade=onCall(options,async req=>{
  const u=await user(req),{studentId,subject,period,test,value}=req.data||{};
  isValid(subject,period,test);
- if(typeof value!=="number"||!Number.isFinite(value)||value<0)error("الدرجة يجب أن تكون رقمًا غير سالب");
+ if(!validScore(value))error("الدرجة يجب أن تكون رقمًا غير سالب");
  if(typeof studentId!=="string")error("الطالب غير صحيح");
  if(u.role!=="admin"&&u.subject!==subject)error("المادة غير مصرح بها","permission-denied");
  const studentRef=db.collection("students").doc(studentId),lockRef=db.collection("locks").doc(docKey([subject,period,test])),gradeRef=db.collection("grades").doc(docKey([studentId,subject,period,test]));
  await db.runTransaction(async tx=>{
   const [student,lock,old]=await Promise.all([tx.get(studentRef),tx.get(lockRef),tx.get(gradeRef)]);
-  if(!student.exists||student.data().archived||!Array.isArray(student.data().subjects)||!student.data().subjects.includes(subject))error("الطالب غير مسند للمادة أو مؤرشف","permission-denied");
-  if(u.role!=="admin"&&!u.classes.includes(student.data().class))error("الفصل غير مصرح به","permission-denied");
+  if(!student.exists||!canAccessStudent(u,student.data(),subject))error("الطالب أو المادة أو الفصل غير مصرح به","permission-denied");
   if(u.role!=="admin"&&lock.data()?.closed)error("التقييم مغلق","permission-denied");
   tx.set(gradeRef,{studentId,subject,period,test,value,updatedAt:FieldValue.serverTimestamp()});
   tx.create(db.collection("audit").doc(),audit("saveGrade",u.role==="admin"?"admin":u.groupId,{studentId,subject,period,test,previous:old.data()?.value??null,value}));
@@ -127,7 +127,8 @@ export const upsertGroup=onCall({...options,secrets:[PEPPER]},async req=>{
  if(!id&&(typeof pin!=="string"||pin.length<12||pin.length>128))error("رمز المجموعة الجديد يجب أن يتكون من 12 حرفًا على الأقل");
  if(id&&pin!==undefined&&(typeof pin!=="string"||pin.length<12||pin.length>128))error("رمز المجموعة يجب أن يتكون من 12 حرفًا على الأقل");
  const others=await db.collection("groups").where("subject","==",subject).where("enabled","==",true).get();
- if(others.docs.some(d=>d.id!==id&&d.data().classes.some(c=>classes.includes(c))))error("يوجد فصل مسند لمجموعة أخرى في المادة");
+ const groupIdForOverlap=id??null;
+ if(overlappingClasses({id:groupIdForOverlap,subject,classes},others.docs.map(d=>({id:d.id,...d.data()}))))error("يوجد فصل مسند لمجموعة أخرى في المادة");
  const groupId=id||randomUUID(),data={
    subject,label:label.trim(),classes:[...new Set(classes)],enabled:true,
    version:(old?.data()?.version??0)+1,updatedAt:FieldValue.serverTimestamp()
