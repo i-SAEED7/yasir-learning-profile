@@ -30,9 +30,9 @@ function explain(e){
  if(e?.code==="auth/operation-not-allowed")return "فعّل تسجيل الدخول بالبريد وكلمة المرور في Firebase Authentication";
  if(e?.code==="auth/invalid-credential"||e?.code==="auth/invalid-email"||e?.code==="auth/wrong-password")return "رمز الدخول أو بيانات الحساب غير صحيحة";
  if(e?.code==="auth/email-already-in-use")return "هذا الرمز مستخدم؛ اختر رمزًا جديدًا للمجموعة";
- if(e?.code==="permission-denied")return "ليس لديك صلاحية لهذه العملية أو أن التقييم مغلق. تحقق من قواعد Firestore";
- if(e?.code==="unavailable")return "تعذر الاتصال بقاعدة البيانات، تحقق من الشبكة";
- if(e?.code==="failed-precondition")return "قاعدة Firestore أو أحد الفهارس لم يُجهز بعد";
+ if(e?.code==="permission-denied")return "رفضت Firestore العملية. تحقق من نشر قواعد الأمان ومن تفعيل صلاحيات حساب المنسق";
+ if(e?.code==="unavailable")return "تعذّر الوصول إلى Firestore. تحقق من إنشاء قاعدة البيانات (default) في Firebase ومن اتصال الشبكة، ثم أعد المحاولة";
+ if(e?.code==="failed-precondition")return "إعداد قاعدة Firestore غير مكتمل. تحقق من وجود قاعدة البيانات (default) في مشروع Firebase";
  if(e?.message==="admin-required")return "الحساب ليس مخولًا بصفة منسق؛ راجع سجل ys_admins";
  if(e?.message==="group-disabled")return "رمز المجموعة غير فعال أو لا يتبع المادة المختارة";
  return "تعذّرت العملية، ولم يتأكد حفظ البيانات. "+String(e?.code||"");
@@ -64,6 +64,7 @@ async function load(){
   students=docArr(st);groups=docArr(gr);locks=docArr(lo);
   return;
  }
+ if(!subjectId)throw Error("admin-required");
  const groupSnap=await getDoc(groupDoc(auth.currentUser.uid));
  if(!groupSnap.exists()||groupSnap.data().enabled!==true)throw Error("group-disabled");
  const current={id:groupSnap.id,...groupSnap.data()};
