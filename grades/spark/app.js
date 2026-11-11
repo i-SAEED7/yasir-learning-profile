@@ -127,8 +127,8 @@ function renderLogin(x){
  '<div class="actions">'+btn("دخول","loginBtn")+btn("عودة","back","outline")+'</div></section>';
  $("back").onclick=()=>{page="subjects";render()};
  const login=()=>task(async()=>{
-  const secret=$("secret").value;
-  if(secret.length<8){flash("أدخل رمزًا صحيحًا");return}
+  const secret=admin?$("secret").value:$("secret").value.trim();
+  if(!admin&&secret.length<6){flash("رمز المجموعة لا يقل عن 6 خانات");return}
   if(admin){const email=$("email").value.trim();if(!email){flash("أدخل البريد");return}await enterAdmin(email,secret)}
   else await enterTeacher(secret);
  });
