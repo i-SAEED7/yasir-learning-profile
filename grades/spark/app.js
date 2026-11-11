@@ -258,7 +258,7 @@ function renderGroups(){
   select("groupSubject","المادة",subs,"s0")+
   '<div class="field"><label for="groupLabel">اسم المجموعة (بدون أسماء معلمين)</label><input id="groupLabel" maxlength="80" placeholder="المجموعة أ"></div>'+
   (editId?'<p class="hint">رمز الدخول الحالي يبقى كما هو. لتغييره عطّل المجموعة وأنشئ رمزًا جديدًا.</p>':
-  '<div class="field"><label for="groupPin">رمز المجموعة السري (12 حرفًا على الأقل)</label><input id="groupPin" type="password" maxlength="80" autocomplete="new-password" placeholder="يُعرض مرة واحدة بعد الإنشاء"></div>'+btn("توليد رمز قوي","genPin","outline"))+
+  '<div class="field"><label for="groupPin">رمز المجموعة السري (6 خانات على الأقل)</label><input id="groupPin" type="password" maxlength="80" autocomplete="new-password" placeholder="يُعرض مرة واحدة بعد الإنشاء"></div>'+btn("توليد رمز قوي","genPin","outline"))+
   '<div class="field"><label>الفصول المسندة</label><div class="switches">'+classrooms.map(([c,n])=>'<label><input type="checkbox" data-class="'+c+'">'+safe(n)+'</label>').join("")+'</div></div>'+
   '<div class="actions">'+btn(editId?"حفظ تعديل المجموعة":"إنشاء المجموعة","saveGroup")+btn("إلغاء","cancelGroup","outline")+'</div></section>'+
   '<div id="generatedCode"></div><section class="panel">'+html("المجموعات المنشأة",groups.filter(g=>g.enabled).length+" فعالة")+
@@ -274,7 +274,7 @@ function renderGroups(){
     await load();editId=null;draw();flash("تم تعديل المجموعة وتحديث الصلاحيات");
    }else{
     const pin=$("groupPin").value.trim();
-    if(pin.length<12){flash("رمز المجموعة لا يقل عن 12 حرفًا");return}
+    if(pin.length<6){flash("رمز المجموعة لا يقل عن 6 خانات");return}
     if(!regAuth)throw Error("registrar-not-ready");
     const email=await groupEmail(s,pin);
     const cred=await createUserWithEmailAndPassword(regAuth,email,pin);
