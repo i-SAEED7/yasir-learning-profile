@@ -80,7 +80,7 @@
   padding:18px 24px;
   display:grid;
   direction:rtl;
-  grid-template-columns:minmax(135px,29%) 3px minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr) 3px minmax(0,1fr);
   grid-template-rows:1fr;
   gap:15px;
   align-items:center;
@@ -127,6 +127,8 @@
   margin:0;
   min-width:0;
   white-space:normal;
+  font-family:YasirMinistry,Tahoma,Arial,sans-serif;
+  font-weight:400;
   font-size:clamp(18px,2.4vw,29px);
   line-height:1.4;
 }
@@ -135,6 +137,7 @@
   overflow-wrap:normal;
   max-width:100%;
 }
+.banner .official-lines .school{font-weight:700}
 .grid .item{
   min-height:78px;
   display:flex;
@@ -146,7 +149,7 @@
 .grid .item strong{line-height:1.65}
 @media(max-width:700px){
   .banner .official-head{
-    grid-template-columns:minmax(108px,33%) 2px minmax(0,1fr);
+    grid-template-columns:minmax(0,1fr) 2px minmax(0,1fr);
     grid-template-rows:1fr;
     gap:10px;
     padding:15px 12px;
@@ -176,7 +179,7 @@
   .grid .item{min-height:75px}
 }
 @media(max-width:355px){
-  .banner .official-head{grid-template-columns:minmax(90px,32%) 2px minmax(0,1fr);gap:8px;padding:12px 10px}
+  .banner .official-head{grid-template-columns:minmax(0,1fr) 2px minmax(0,1fr);gap:8px;padding:12px 10px}
   .banner .official-logo-side .official-logo-image{width:100%}
   .banner .official-lines{font-size:11.7px;line-height:1.45}
 }
@@ -186,7 +189,7 @@
 <div class="app">
 <header class="banner" role="banner">
   <div class="official-head" aria-label="ترويسة وزارة التعليم">
-    <div class="official-logo-side"><img class="official-logo-image" alt="شعار وزارة التعليم" src="data:image/png;base64,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" loading="eager" referrerpolicy="no-referrer"></div>
+    <div class="official-logo-side"><img class="official-logo-image" alt="شعار وزارة التعليم" src="../../assets/moe-logo-sharp.svg" loading="eager"></div>
     <span class="official-divider" aria-hidden="true"></span>
     <div class="official-lines">
       <span>المملكة العربية السعودية</span>
