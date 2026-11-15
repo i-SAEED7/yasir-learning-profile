@@ -72,17 +72,17 @@
 }
 
 
-/* تعديل نهائي: الترويسة الأفقية (شعار | فاصل | نص) على جميع الشاشات */
+/* الترويسة الرسمية: حجم متوازن وخط الوزارة، والفاصل في المنتصف */
 .banner .official-head{
   width:min(100%,1150px);
   min-height:0;
   margin:0 auto;
-  padding:18px 24px;
+  padding:17px 22px;
   display:grid;
   direction:rtl;
-  grid-template-columns:minmax(0,1fr) 3px minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr) 2px minmax(0,1fr);
   grid-template-rows:1fr;
-  gap:15px;
+  column-gap:12px;
   align-items:center;
   justify-items:stretch;
 }
@@ -92,27 +92,28 @@
   height:auto;
   padding:0;
   display:flex;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
   min-width:0;
 }
 .banner .official-logo-side .official-logo-image{
   display:block;
-  width:min(100%,280px);
+  width:min(100%,195px);
+  max-height:150px;
   height:auto;
-  max-height:none;
   object-fit:contain;
 }
 .banner .official-divider{
   grid-column:2;
   grid-row:1;
-  width:3px;
-  height:auto;
-  align-self:stretch;
-  margin-block:8px;
   display:block;
+  width:2px;
+  height:103px;
+  margin:0;
+  align-self:center;
   justify-self:center;
-  background:#fff;
+  background:rgba(255,255,255,.55);
+  border-radius:2px;
 }
 .banner .official-lines{
   grid-column:3;
@@ -121,22 +122,17 @@
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  text-align:center;
-  gap:0;
-  padding:0 4px;
+  padding:0;
   margin:0;
   min-width:0;
+  text-align:center;
   white-space:normal;
   font-family:YasirMinistry,Tahoma,Arial,sans-serif;
+  font-size:clamp(15px,1.65vw,20px);
   font-weight:400;
-  font-size:clamp(18px,2.4vw,29px);
   line-height:1.4;
 }
-.banner .official-lines span{
-  display:block;
-  overflow-wrap:normal;
-  max-width:100%;
-}
+.banner .official-lines span{display:block;max-width:100%;overflow-wrap:normal}
 .banner .official-lines .school{font-weight:700}
 .grid .item{
   min-height:78px;
@@ -150,40 +146,21 @@
 @media(max-width:700px){
   .banner .official-head{
     grid-template-columns:minmax(0,1fr) 2px minmax(0,1fr);
-    grid-template-rows:1fr;
-    gap:10px;
+    gap:9px;
     padding:15px 12px;
-    min-height:130px;
+    min-height:0;
   }
-  .banner .official-logo-side .official-logo-image{
-    width:100%;
-    max-height:none;
-    height:auto;
-  }
-  .banner .official-divider{
-    grid-row:1;
-    grid-column:2;
-    width:2px;
-    height:auto;
-    align-self:stretch;
-    margin:6px 0;
-  }
-  .banner .official-lines{
-    grid-row:1;
-    grid-column:3;
-    padding:0;
-    font-size:clamp(12px,3.35vw,16px);
-    line-height:1.5;
-    text-align:center;
-  }
+  .banner .official-logo-side .official-logo-image{width:min(100%,152px);max-height:116px}
+  .banner .official-divider{width:2px;height:90px;background:rgba(255,255,255,.50)}
+  .banner .official-lines{font-size:12px;line-height:1.5}
   .grid .item{min-height:75px}
 }
-@media(max-width:355px){
+@media(max-width:420px){
   .banner .official-head{grid-template-columns:minmax(0,1fr) 2px minmax(0,1fr);gap:8px;padding:12px 10px}
-  .banner .official-logo-side .official-logo-image{width:100%}
-  .banner .official-lines{font-size:11.7px;line-height:1.45}
+  .banner .official-logo-side .official-logo-image{width:min(100%,126px);max-height:96px}
+  .banner .official-divider{height:74px;background:rgba(255,255,255,.46)}
+  .banner .official-lines{font-size:10.5px;line-height:1.45}
 }
-
 #nav[hidden],#toast[hidden]{display:none!important}
 </style></head><body>
 <div class="app">
